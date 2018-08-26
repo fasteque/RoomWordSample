@@ -1,12 +1,13 @@
 package com.fasteque.roomwordsample.db
 
 import android.content.Context
-import androidx.room.Room
-import com.fasteque.roomwordsample.db.dao.WordDao
-import androidx.room.RoomDatabase
-import com.fasteque.roomwordsample.db.entity.Word
+import android.os.AsyncTask
 import androidx.room.Database
-
+import androidx.room.Room
+import androidx.room.RoomDatabase
+import androidx.sqlite.db.SupportSQLiteDatabase
+import com.fasteque.roomwordsample.db.dao.WordDao
+import com.fasteque.roomwordsample.db.entity.Word
 
 
 /**
@@ -29,6 +30,10 @@ abstract class WordRoomDatabase : RoomDatabase() {
                     if (INSTANCE == null) {
                         INSTANCE = Room.databaseBuilder(context.applicationContext,
                                 WordRoomDatabase::class.java, "word_database")
+                                // Wipes and rebuilds instead of migrating if no Migration object.
+                                // Migration is not part of this example.
+                                .fallbackToDestructiveMigration()
+                                .addCallback(roomDatabaseCallback)
                                 .build()
 
                     }
@@ -36,6 +41,37 @@ abstract class WordRoomDatabase : RoomDatabase() {
             }
             return this.INSTANCE!!
         }
+
+        /**
+         * Override the onOpen method to populate the database.
+         * For this sample, we clear the database every time it is created or opened.
+         */
+        private val roomDatabaseCallback = object : RoomDatabase.Callback() {
+
+            override fun onOpen(db: SupportSQLiteDatabase) {
+                super.onOpen(db)
+                // If you want to keep the data through app restarts, comment out the following line.
+                PopulateDbAsync(INSTANCE!!).execute()
+            }
+        }
     }
 
+    /**
+     * Populate the database in the background.
+     * If you want to start with more words, just add them.
+     */
+    private class PopulateDbAsync internal constructor(db: WordRoomDatabase) : AsyncTask<Void, Void, Void>() {
+
+        private val dao: WordDao = db.wordDao()
+
+        override fun doInBackground(vararg params: Void): Void? {
+            // Start the app with a clean database every time.
+            // Not needed if you only populate on creation.
+            dao.deleteAll()
+
+            dao.insert(Word("Hello"))
+            dao.insert(Word("World"))
+            return null
+        }
+    }
 }
