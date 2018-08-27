@@ -24,7 +24,7 @@ class NewWordActivity : AppCompatActivity() {
                 setResult(Activity.RESULT_CANCELED, replyIntent)
             } else {
                 val word = editWordView.text.toString()
-                replyIntent.putExtra(Companion.EXTRA_REPLY, word)
+                replyIntent.putExtra(EXTRA_REPLY, word)
                 setResult(Activity.RESULT_OK, replyIntent)
             }
             finish()
